@@ -16,19 +16,27 @@ Portage de **DOOM** (basé sur [doomgeneric](https://github.com/ozkl/doomgeneric
 
 - **Fenêtrage natif Banana OS** : rendu direct via l'API graphique `bwin` en Ring 0 / mémoire partagée.
 - **Mode Plein Écran (`-fullscreen` / `-fs`)** : s'adapte automatiquement à la résolution de l'écran avec bordures noires (pillarboxing) pour préserver le ratio 16:10 d'origine de DOOM.
+- **Prise en charge Multi-Touches native (SDK API v14 / build 139)** :
+  - Déplacements combinés simultanés (avancer + strafer en diagonale avec <kbd>Z</kbd>+<kbd>D</kbd> ou <kbd>W</kbd>+<kbd>D</kbd>).
+  - Sprint / course fluide (<kbd>Shift</kbd> maintenu pendant les déplacements).
+  - Tirer ou ouvrir les portes tout en continuant d'avancer sans interruption.
+  - Rétrocompatibilité automatique avec filtre typematic logiciel pour les versions antérieures de Banana OS.
 - **Contrôles Clavier AZERTY & QWERTY** :
   - <kbd>Z</kbd> / <kbd>W</kbd> : Avancer
   - <kbd>S</kbd> : Reculer
   - <kbd>Q</kbd> / <kbd>A</kbd> : Tourner à gauche
   - <kbd>D</kbd> : Tourner à droite
-  - Touches maintenues continues grâce à un filtre temporel typematic logiciel.
+  - <kbd>Shift</kbd> : Courir / Speed
+  - <kbd>Ctrl</kbd> / <kbd>F</kbd> / <kbd>C</kbd> : Tirer
+  - <kbd>Espace</kbd> / <kbd>E</kbd> : Ouvrir les portes / Action
+  - <kbd>,</kbd> / <kbd>.</kbd> : Pas chassés (Strafe) gauche / droite
 - **Prise en charge de la Souris** :
   - **Rotation libre / Visée fluide** via les deltas de mouvement de la souris.
   - **Clic gauche** : Tirer
   - **Clic droit** : Action / Ouvrir les portes
   - **Molette de souris** : Changement d'arme précédent / suivant
 - **Neutralisation du Curseur** : le curseur flèche du système est masqué pendant le jeu (option `-showcursor` pour le forcer si nécessaire).
-- **Moteur Audio Natif Multi-Canaux** : bruitages et effets sonores complets (tirs d'armes, monstres, portes, ascenseurs, explosions, pickups, cris de douleur) mixés en temps réel sur 16 canaux à 48 000 Hz en 16-bit stéréo avec spatialisation sonore gauche/droite via `banana_play()`.
+- **Moteur Audio Haute Fidélité Multi-Canaux** : bruitages et effets sonores complets (tirs d'armes, monstres, portes, explosions, pickups, etc.) mixés en temps réel sur 16 canaux à 48 000 Hz en 16-bit stéréo avec interpolation linéaire anti-crépitement, spatialisation gauche/droite et gestion continue de la file DMA via `banana_play()`.
 - **Architecture Universelle** : paquet binaire `.bpk` contenant à la fois les exécutables 32-bit (`app-i686`) et 64-bit (`app-x86_64`).
 
 ---

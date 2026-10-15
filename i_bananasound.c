@@ -205,7 +205,7 @@ static void I_Banana_PrecacheSounds(sfxinfo_t* sounds, int num_sounds) {
 static void I_Banana_UpdateSound(void) {
     if (!s_sound_initialized) return;
 
-    /* Compute number of samples for this tic (48000 / 35 = 1371.428) */
+    /* Compute number of output samples for this tic (48000 / 35 = 1371.428) */
     s_frac_acc += BANANA_AUDIO_RATE;
     uint32_t nsamples = s_frac_acc / 35;
     s_frac_acc %= 35;
@@ -218,8 +218,8 @@ static void I_Banana_UpdateSound(void) {
 
     if (!active_count) return;
 
-    /* Prevent queueing too much audio ahead (keep latency around ~70ms) */
-    if (banana_audio_queued_ms() > 100) return;
+    /* Safety guard: only throttle if audio queue has accumulated > 600ms backlog */
+    if (banana_audio_queued_ms() > 600) return;
 
     memset(s_mix_l, 0, nsamples * sizeof(int32_t));
     memset(s_mix_r, 0, nsamples * sizeof(int32_t));
@@ -239,7 +239,7 @@ static void I_Banana_UpdateSound(void) {
         int vol = ch->vol;
         if (vol < 0) vol = 0; else if (vol > 127) vol = 127;
 
-        /* Panning: sep 0 = full left, 128 = center, 254 = full right */
+        /* Stereo panning: sep 0 = full left, 128 = center, 254 = full right */
         int lvol = (vol * (254 - sep)) / 128;
         int rvol = (vol * sep) / 128;
 
@@ -249,9 +249,17 @@ static void I_Banana_UpdateSound(void) {
                 ch->active = 0;
                 break;
             }
-            int sample = (int)pcm[s_idx] - 128; /* Convert unsigned 8-bit to signed */
-            s_mix_l[i] += sample * lvol * 4;
-            s_mix_r[i] += sample * rvol * 4;
+
+            /* High quality linear interpolation between consecutive samples */
+            uint32_t frac = (uint32_t)(pos & 0xFFFF);
+            int s0 = (int)pcm[s_idx] - 128;
+            int s1 = (s_idx + 1 < sfx_len) ? ((int)pcm[s_idx + 1] - 128) : s0;
+            int sample = s0 + (int)(((int64_t)(s1 - s0) * (int64_t)frac) >> 16);
+
+            /* Scale to 16-bit without clipping */
+            s_mix_l[i] += sample * lvol * 2;
+            s_mix_r[i] += sample * rvol * 2;
+
             pos += step;
         }
         ch->pos_fp = pos;

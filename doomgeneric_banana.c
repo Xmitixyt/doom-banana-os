@@ -247,6 +247,71 @@ static unsigned char map_key(int key) {
     }
 }
 
+extern const banana_api_t* __banana;
+
+typedef struct {
+    unsigned char doom_key;
+    int is_down;
+    int banana_keys[5];
+} action_key_map_t;
+
+static action_key_map_t s_action_keys[] = {
+    { KEY_UPARROW,    0, {'w', 'z', BANANA_KEY_UP, 0} },
+    { KEY_DOWNARROW,  0, {'s', BANANA_KEY_DOWN, 0, 0} },
+    { KEY_LEFTARROW,  0, {'a', 'q', BANANA_KEY_LEFT, 0} },
+    { KEY_RIGHTARROW, 0, {'d', BANANA_KEY_RIGHT, 0, 0} },
+    { KEY_STRAFE_L,   0, {',', '<', 0, 0} },
+    { KEY_STRAFE_R,   0, {'.', '>', 0, 0} },
+    { KEY_USE,        0, {' ', 'e', 'E', 0} },
+    { KEY_FIRE,       0, {BANANA_KEY_CTRL, 'f', 'x', 'c', 0} },
+    { KEY_RSHIFT,     0, {BANANA_KEY_SHIFT, 0, 0, 0} },
+    { KEY_RALT,       0, {BANANA_KEY_ALT, 0, 0, 0} },
+    { KEY_ESCAPE,     0, {27, 0, 0, 0} },
+    { KEY_ENTER,      0, {'\n', '\r', 0, 0} },
+    { KEY_TAB,        0, {'\t', 0, 0, 0} },
+    { KEY_BACKSPACE,  0, {'\b', 127, 0, 0} },
+    { '1',            0, {'1', '&', 0, 0} },
+    { '2',            0, {'2', 233, 0, 0} }, /* 'é' (0xE9) */
+    { '3',            0, {'3', '"', 0, 0} },
+    { '4',            0, {'4', '\'', 0, 0} },
+    { '5',            0, {'5', '(', 0, 0} },
+    { '6',            0, {'6', '-', 0, 0} },
+    { '7',            0, {'7', 232, 0, 0} }, /* 'è' (0xE8) */
+    { 'y',            0, {'y', 'o', 0, 0} },
+    { 'n',            0, {'n', 0, 0, 0} },
+};
+
+static int is_action_key(int key) {
+    for (int i = 0; i < (int)(sizeof(s_action_keys)/sizeof(s_action_keys[0])); i++) {
+        for (int k = 0; k < 5 && s_action_keys[i].banana_keys[k] != 0; k++) {
+            if (s_action_keys[i].banana_keys[k] == key) return 1;
+        }
+    }
+    return 0;
+}
+
+static void check_multi_keys(void) {
+    if (!__banana || __banana->version < 14) return;
+
+    for (int i = 0; i < (int)(sizeof(s_action_keys)/sizeof(s_action_keys[0])); i++) {
+        action_key_map_t* ak = &s_action_keys[i];
+        int currently_down = 0;
+        for (int k = 0; k < 5 && ak->banana_keys[k] != 0; k++) {
+            if (banana_key_down(ak->banana_keys[k])) {
+                currently_down = 1;
+                break;
+            }
+        }
+        if (currently_down && !ak->is_down) {
+            ak->is_down = 1;
+            queue_key(1, ak->doom_key);
+        } else if (!currently_down && ak->is_down) {
+            ak->is_down = 0;
+            queue_key(0, ak->doom_key);
+        }
+    }
+}
+
 void DG_Log(const char* fmt, ...) {
     FILE* f = fopen("/home/banana/doom.log", "a");
     if (f) {
@@ -304,6 +369,11 @@ void DG_Init(void) {
 void DG_PollEvents(void) {
     if (s_win.id < 0) return;
 
+    int has_multi_key = (__banana != NULL && __banana->version >= 14);
+    if (has_multi_key) {
+        check_multi_keys();
+    }
+
     banana_event_t ev;
     while (bwin_event(&s_win, &ev)) {
         if (ev.type == BANANA_EV_CLOSE) {
@@ -323,9 +393,20 @@ void DG_PollEvents(void) {
                 DG_ChangeWeapon(ev.y > 0 ? 1 : -1);
             }
         } else if (ev.type == BANANA_EV_KEY) {
-            unsigned char dk = map_key(ev.key);
-            if (dk) {
-                press_key(dk);
+            if (!has_multi_key) {
+                unsigned char dk = map_key(ev.key);
+                if (dk) {
+                    press_key(dk);
+                }
+            } else {
+                /* In multi-key mode, only process keys that are not game action keys (e.g. typing) */
+                if (!is_action_key(ev.key)) {
+                    unsigned char dk = map_key(ev.key);
+                    if (dk) {
+                        queue_key(1, dk);
+                        queue_key(0, dk);
+                    }
+                }
             }
         } else if (ev.type == BANANA_EV_MOUSE_DOWN) {
             if (ev.button == 1) {
@@ -393,8 +474,10 @@ void DG_PollEvents(void) {
         if (released & BANANA_PAD_START) queue_key(0, KEY_ENTER);
     }
 
-    /* Expire keys that haven't been repeated/held */
-    check_key_timeouts();
+    /* Expire keys only in fallback mode */
+    if (!has_multi_key) {
+        check_key_timeouts();
+    }
 }
 
 void DG_DrawFrame(void) {
