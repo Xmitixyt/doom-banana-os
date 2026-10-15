@@ -28,19 +28,21 @@ Portage de **DOOM** (basé sur [doomgeneric](https://github.com/ozkl/doomgeneric
   - **Clic droit** : Action / Ouvrir les portes
   - **Molette de souris** : Changement d'arme précédent / suivant
 - **Neutralisation du Curseur** : le curseur flèche du système est masqué pendant le jeu (option `-showcursor` pour le forcer si nécessaire).
+- **Moteur Audio Natif Multi-Canaux** : bruitages et effets sonores complets (tirs d'armes, monstres, portes, ascenseurs, explosions, pickups, cris de douleur) mixés en temps réel sur 16 canaux à 48 000 Hz en 16-bit stéréo avec spatialisation sonore gauche/droite via `banana_play()`.
 - **Architecture Universelle** : paquet binaire `.bpk` contenant à la fois les exécutables 32-bit (`app-i686`) et 64-bit (`app-x86_64`).
 
 ---
 
 ## 🐛 Bugs Connus et Limitations (Bêta)
 
-1. **Capture de souris dans les hyperviseurs** :  
+1. **Carte son dans la Machine Virtuelle** :  
+   - Pour entendre le son dans VirtualBox, assurez-vous que l'audio est activé dans les paramètres de la VM (Contrôleur audio : **Intel HD Audio** ou **ICH AC97**).
+   - Dans QEMU, démarrez avec `-device AC97` ou `-device intel-hda -device hda-output`.
+2. **Musique de fond (MIDI/MUS)** :  
+   - Les effets sonores (SFX) sont 100% actifs et fluides. La musique de fond MIDI/MUS n'a pas encore de synthétiseur logiciel intégré dans cette version.
+3. **Capture de souris dans les hyperviseurs** :  
    - Si vous utilisez **VirtualBox**, l'intégration automatique de la souris peut afficher un double pointeur Windows ou limiter les mouvements brusques.  
    - **Solution recommandée** : Désactiver l'intégration de la souris avec <kbd>Ctrl Droite</kbd> + <kbd>I</kbd> afin que VirtualBox capture la souris à 100%.
-2. **Pas d'accélération matérielle 3D / GPU** :  
-   - Banana OS s'exécute sur le framebuffer logiciel du noyau (`fb`). Le framerate dépend des performances CPU de la machine virtuelle.
-3. **Audio / Musique** :  
-   - Le moteur audio et la musique MIDI ne sont pas encore synchronisés avec le pilote DMA audio du noyau Banana OS dans cette bêta.
 4. **Comportement du `wget` dans Banana OS** :  
    - Sur Banana OS, retélécharger un fichier sans supprimer l'ancien crée `fichier.bpk.1` au lieu d'écraser. Pensez toujours à exécuter `rm -f doom.bpk*` avant un `wget`.
 

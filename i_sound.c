@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#if defined(FEATURE_SOUND) && !defined(__DJGPP__)
+#if defined(USE_SDL_MIXER)
 #include <SDL_mixer.h>
 #endif
 

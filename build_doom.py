@@ -25,7 +25,7 @@ SRC_DOOM = [
     "r_segs.c", "r_sky.c", "r_things.c", "sha1.c", "sounds.c", "statdump.c", "st_lib.c",
     "st_stuff.c", "s_sound.c", "tables.c", "v_video.c", "wi_stuff.c", "w_checksum.c",
     "w_file.c", "w_main.c", "w_wad.c", "z_zone.c", "w_file_stdc.c", "i_input.c",
-    "i_video.c", "doomgeneric.c", "doomgeneric_banana.c"
+    "i_video.c", "doomgeneric.c", "doomgeneric_banana.c", "i_bananasound.c"
 ]
 
 LIBC_SRCS = ["crt0.c", "libc.c", "stdio.c", "banana.c", "math.c", "posix.c", "setjmp.c"]
@@ -51,6 +51,7 @@ def compile_arch(arch, clang_target, cflags_arch, lld_emul):
         "-Wno-everything",  # doom code has old C idioms
         "-DNORMALUNIX",
         "-DLINUX",
+        "-DFEATURE_SOUND=1",
         "-D__bool_true_false_are_defined=1",
         "-DDOOMGENERIC_RESX=640",
         "-DDOOMGENERIC_RESY=400",

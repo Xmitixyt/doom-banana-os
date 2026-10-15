@@ -486,11 +486,11 @@ int system(const char* cmd) {
 
 int main(int argc, char** argv) {
     printf("\n======================================================\n");
-    printf("=== DOOM Banana OS v1.5 [Curseur Souris Masque]    ===\n");
+    printf("=== DOOM Banana OS v1.6 [Audio Natif & Souris]     ===\n");
     printf("======================================================\n");
     FILE* logf = fopen("/home/banana/doom.log", "w");
     if (logf) {
-        fprintf(logf, "=== DOOM Banana OS Launcher v1.5 ===\n");
+        fprintf(logf, "=== DOOM Banana OS Launcher v1.6 ===\n");
         fprintf(logf, "argc: %d\n", argc);
         for (int i = 0; i < argc; i++) fprintf(logf, "argv[%d]: %s\n", i, argv[i]);
         fclose(logf);
