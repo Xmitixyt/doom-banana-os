@@ -66,18 +66,22 @@ rm -f doom.bpk*
 # 2. Télécharger le paquet
 wget http://<IP_HOTE>:8000/doom.bpk
 
-# 3. Installer le paquet
+# 3. Installer le paquet (inclut la trilogie DOOM 1, DOOM 2 et The Ultimate Doom)
 pkg install -y doom.bpk
 
-# 4. Lancer DOOM
-doom -fullscreen
+# 4. Lancer le jeu de votre choix :
+doom 3 -fullscreen   # Lance The Ultimate Doom (DOOM 1 complet avec tous les épisodes 1, 2, 3, 4)
+doom 2 -fullscreen   # Lance DOOM II: Hell on Earth (32 niveaux complets)
+doom 1 -fullscreen   # Lance DOOM 1 Shareware
+doom -fullscreen     # Lance par défaut la version complète (The Ultimate Doom)
 ```
 
 ### Options de ligne de commande
 
 ```text
-doom [-fullscreen | -fs] [-ms <1-50>] [-showcursor] [mon_wad.wad]
+doom [1 | 2 | 3] [-fullscreen | -fs] [-ms <1-50>] [-showcursor] [mon_wad.wad]
 ```
+- `1` / `2` / `3` : Sélectionne directement le jeu (**1** = DOOM 1 Shareware, **2** = DOOM II, **3** = The Ultimate Doom).
 - `-fullscreen` ou `-fs` : Mode plein écran.
 - `-ms <vitesse>` : Règle la sensibilité de rotation de la souris (défaut : 7).
 - `-showcursor` : Force l'affichage du pointeur de la souris.

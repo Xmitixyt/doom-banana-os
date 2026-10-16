@@ -569,45 +569,65 @@ int system(const char* cmd) {
 
 int main(int argc, char** argv) {
     printf("\n======================================================\n");
-    printf("=== DOOM Banana OS v1.6 [Audio Natif & Souris]     ===\n");
+    printf("=== DOOM Banana OS v1.7 [Multi-Touches & Full WADs] ===\n");
     printf("======================================================\n");
     FILE* logf = fopen("/home/banana/doom.log", "w");
     if (logf) {
-        fprintf(logf, "=== DOOM Banana OS Launcher v1.6 ===\n");
+        fprintf(logf, "=== DOOM Banana OS Launcher v1.7 ===\n");
         fprintf(logf, "argc: %d\n", argc);
         for (int i = 0; i < argc; i++) fprintf(logf, "argv[%d]: %s\n", i, argv[i]);
         fclose(logf);
     }
+    int selected_version = 0; /* 0 = auto, 1 = doom1, 2 = doom2, 3 = doom3 */
+    char custom_wad[256] = "";
+
+    for (int i = 1; i < argc; i++) {
+        const char* arg = argv[i];
+        if (strcmp(arg, "1") == 0 || strcmp(arg, "-1") == 0 || strcasecmp(arg, "doom1") == 0 || strcasecmp(arg, "doom1.wad") == 0) {
+            selected_version = 1;
+        } else if (strcmp(arg, "2") == 0 || strcmp(arg, "-2") == 0 || strcasecmp(arg, "doom2") == 0 || strcasecmp(arg, "doom2.wad") == 0) {
+            selected_version = 2;
+        } else if (strcmp(arg, "3") == 0 || strcmp(arg, "-3") == 0 || strcasecmp(arg, "doom3") == 0 || strcasecmp(arg, "doom3.wad") == 0 || strcasecmp(arg, "doom.wad") == 0) {
+            selected_version = 3;
+        } else if (arg[0] != '-') {
+            strncpy(custom_wad, arg, sizeof(custom_wad) - 1);
+        }
+    }
 
     char wad_file[256] = "";
 
-    /* 1. Check if WAD passed via command line */
-    if (argc > 1 && argv[1][0] != '-') {
-        strncpy(wad_file, argv[1], sizeof(wad_file) - 1);
+    if (custom_wad[0]) {
+        strncpy(wad_file, custom_wad, sizeof(wad_file) - 1);
+    } else if (selected_version == 1) {
+        strcpy(wad_file, "/apps/doom/doom1.wad");
+    } else if (selected_version == 2) {
+        strcpy(wad_file, "/apps/doom/doom2.wad");
+    } else if (selected_version == 3) {
+        strcpy(wad_file, "/apps/doom/doom3.wad");
     } else {
-        /* 2. Check standard locations */
-        const char* candidate_wads[] = {
-            "/apps/doom/doom1.wad",
-            "/apps/doom/DOOM1.WAD",
-            "doom1.wad",
-            "DOOM1.WAD",
-            "/home/banana/doom1.wad",
-            "/home/banana/DOOM1.WAD",
-            "/home/banana/Downloads/doom1.wad",
-            "/mnt/usb/doom1.wad",
-            "/mnt/usb/DOOM1.WAD",
-            NULL
-        };
-
-        for (int i = 0; candidate_wads[i]; i++) {
-            if (file_exists(candidate_wads[i])) {
-                strncpy(wad_file, candidate_wads[i], sizeof(wad_file) - 1);
-                break;
+        /* Default auto-selection: prefer full Doom 3 / Ultimate Doom, then Doom 2, then Doom 1 */
+        if (file_exists("/apps/doom/doom3.wad")) {
+            strcpy(wad_file, "/apps/doom/doom3.wad");
+        } else if (file_exists("/apps/doom/doom2.wad")) {
+            strcpy(wad_file, "/apps/doom/doom2.wad");
+        } else if (file_exists("/apps/doom/doom1.wad")) {
+            strcpy(wad_file, "/apps/doom/doom1.wad");
+        } else {
+            const char* candidate_wads[] = {
+                "/apps/doom/doom3.wad", "/apps/doom/doom2.wad", "/apps/doom/doom1.wad",
+                "doom3.wad", "doom2.wad", "doom1.wad", "doom.wad",
+                "/home/banana/doom3.wad", "/home/banana/doom2.wad", "/home/banana/doom1.wad",
+                NULL
+            };
+            for (int i = 0; candidate_wads[i]; i++) {
+                if (file_exists(candidate_wads[i])) {
+                    strncpy(wad_file, candidate_wads[i], sizeof(wad_file) - 1);
+                    break;
+                }
             }
         }
     }
 
-    /* Fallback default to /apps/doom/doom1.wad if no candidate was found */
     if (!wad_file[0]) {
         strcpy(wad_file, "/apps/doom/doom1.wad");
     }
@@ -625,7 +645,7 @@ int main(int argc, char** argv) {
     doom_argv[doom_argc++] = "-iwad";
     doom_argv[doom_argc++] = wad_file;
     for (int i = 1; i < argc && doom_argc < 15; i++) {
-        if (argv[i][0] == '-') {
+        if (argv[i][0] == '-' && strcmp(argv[i], "-1") != 0 && strcmp(argv[i], "-2") != 0 && strcmp(argv[i], "-3") != 0) {
             doom_argv[doom_argc++] = argv[i];
         }
     }

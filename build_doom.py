@@ -139,14 +139,19 @@ def main():
 
     # 4. Package with bpkg
     bpk_path = os.path.join(DOOM_DIR, "doom.bpk")
-    wad_path = os.path.join(DOOM_DIR, "doom1.wad")
     icon_path = os.path.join(DOOM_DIR, "icon.png")
+
+    wad_files = []
+    for w in ["doom1.wad", "doom2.wad", "doom3.wad"]:
+        wp = os.path.join(DOOM_DIR, w)
+        if os.path.exists(wp):
+            wad_files.append(wp)
 
     pack_cmd = [
         sys.executable, BPKG, "pack", "-o", bpk_path,
-        manifest_path, app_x86_64, app_i686, wad_path, f"icon.png={icon_path}"
-    ]
-    print(f"\nPacking {bpk_path}...")
+        manifest_path, app_x86_64, app_i686
+    ] + wad_files + [f"icon.png={icon_path}"]
+    print(f"\nPacking {bpk_path} with {len(wad_files)} WADs...")
     subprocess.check_call(pack_cmd)
 
     # 5. Check package
