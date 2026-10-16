@@ -19,8 +19,13 @@ Portage de **DOOM** (basé sur [doomgeneric](https://github.com/ozkl/doomgeneric
   - **Prêt à jouer immédiatement** : aucun fichier WAD supplémentaire à chercher ou copier, tout est intégré directement dans le paquet `doom.bpk` !
   - **DOOM 1** (`doom 1`) : version Shareware classique (Épisode 1 : *Knee-Deep in the Dead*).
   - **DOOM 2** (`doom 2`) : le légendaire *DOOM II: Hell on Earth* complet avec ses 32 niveaux, le Super Shotgun et tous les monstres originaux.
-  - **DOOM 3 / The Ultimate Doom** (`doom 3` ou `doom`) : la version ultime de DOOM 1 avec l'ensemble des 4 épisodes (*Knee-Deep in the Dead*, *The Shores of Hell*, *Inferno*, et *Thy Flesh Consumed*).
-- **Fenêtrage natif Banana OS (Ring 3 / SDK Build 165)** : rendu graphique optimisé via l'API `bwin` avec exécution sécurisée en espace utilisateur protégé.
+  - **DOOM 3 / The Ultimate Doom** (`doom 3` ou `doom`) : la version ultime de DOOM 1 avec l'ensemble des 4 épisodes (*Knee-Deep in the Dead*, *The Shores of Hell*, *Inferno*, et *Thy Flesh Consumed*). WAD réparé et certifié 100% stable (lumps `F_START` / `F_END` restaurés).
+- **Capture de Souris Relative Native (SDK API v20 / Build 167+)** :
+  - **Rotation 360° fluide et infinie** : fini la souris qui bloque sur les bords de la fenêtre ou de l'écran !
+  - **Support matériel VMMouse / VirtualBox** : suspension automatique de l'intégration absolue par le noyau lors de la capture.
+  - **Curseur masqué proprement** et gestion des événements relatifs non-bornés (`BANANA_EV_MOUSE_REL`).
+  - **Re-capture au clic** : cliquez simplement dans la fenêtre pour reprendre le contrôle après avoir appuyé sur Échap ou changé de focus.
+- **Fenêtrage natif Banana OS (Ring 3 / SDK Build 165+)** : rendu graphique optimisé via l'API `bwin` avec exécution sécurisée en espace utilisateur protégé.
 - **Mode Plein Écran (`-fullscreen` / `-fs`)** : s'adapte automatiquement à la résolution de l'écran avec bordures noires (pillarboxing) pour préserver le ratio 16:10 d'origine de DOOM.
 - **Prise en charge Multi-Touches native (SDK API v14 / build 139)** :
   - Déplacements combinés simultanés (avancer + strafer en diagonale avec <kbd>Z</kbd>+<kbd>D</kbd> ou <kbd>W</kbd>+<kbd>D</kbd>).
@@ -36,8 +41,8 @@ Portage de **DOOM** (basé sur [doomgeneric](https://github.com/ozkl/doomgeneric
   - <kbd>Ctrl</kbd> / <kbd>F</kbd> / <kbd>C</kbd> : Tirer
   - <kbd>Espace</kbd> / <kbd>E</kbd> : Ouvrir les portes / Action
   - <kbd>,</kbd> / <kbd>.</kbd> : Pas chassés (Strafe) gauche / droite
-- **Prise en charge de la Souris** :
-  - **Rotation libre / Visée fluide** via les deltas de mouvement de la souris.
+- **Prise en charge Complète de la Souris** :
+  - **Visée 360° ultra-fluide** via la capture relative native (`-ms <1-50>` pour ajuster la sensibilité, défaut : 4).
   - **Clic gauche** : Tirer
   - **Clic droit** : Action / Ouvrir les portes
   - **Molette de souris** : Changement d'arme précédent / suivant
@@ -53,9 +58,8 @@ Portage de **DOOM** (basé sur [doomgeneric](https://github.com/ozkl/doomgeneric
    - Dans QEMU, démarrez avec `-device AC97` ou `-device intel-hda -device hda-output`.
 2. **Musique de fond (MIDI/MUS)** :  
    - Les effets sonores (SFX) sont 100% actifs et fluides. La musique de fond MIDI/MUS n'a pas encore de synthétiseur logiciel intégré dans cette version.
-3. **Capture de souris dans les hyperviseurs** :  
-   - Si vous utilisez **VirtualBox**, l'intégration automatique de la souris peut afficher un double pointeur Windows ou limiter les mouvements brusques.  
-   - **Solution recommandée** : Désactiver l'intégration de la souris avec <kbd>Ctrl Droite</kbd> + <kbd>I</kbd> afin que VirtualBox capture la souris à 100%.
+3. **Capture de souris** :  
+   - Avec **Banana OS Build 167+ (API v20)**, la capture relative est native et automatique ! Si vous êtes sur une version plus ancienne de Banana OS, désactiver l'intégration de la souris VirtualBox (<kbd>Ctrl Droite</kbd> + <kbd>I</kbd>) est recommandé pour éviter les limitations de bordure.
 4. **Comportement du `wget` dans Banana OS** :  
    - Sur Banana OS, retélécharger un fichier sans supprimer l'ancien crée `fichier.bpk.1` au lieu d'écraser. Pensez toujours à exécuter `rm -f doom.bpk*` avant un `wget`.
 ---
@@ -69,7 +73,7 @@ Ouvrez un terminal dans Banana OS (`start` si vous êtes en mode texte) :
 rm -f doom.bpk*
 
 # 2. Télécharger le paquet directement depuis GitHub :
-wget -O doom.bpk https://github.com/Xmitixyt/doom-banana-os/releases/download/v1.7-beta/doom.bpk
+wget -O doom.bpk https://github.com/Xmitixyt/doom-banana-os/releases/download/v1.8-beta/doom.bpk
 # OU via le lien direct raw GitHub si la release est en cours d'édition :
 # wget -O doom.bpk https://raw.githubusercontent.com/Xmitixyt/doom-banana-os/main/releases/doom.bpk
 

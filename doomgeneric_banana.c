@@ -41,15 +41,29 @@ static uint32_t s_pad_prev = 0;
 static int s_last_mouse_x = -1;
 static int s_last_mouse_y = -1;
 static int s_mouse_buttons = 0;
-static int s_mouse_speed = 7;
+static int s_mouse_speed = 4;
+static int s_mouse_captured = 0;
+static int s_show_cursor = 0;
 
 static void DG_RestoreCursor(void) {
-    /* Cursor handled safely by system desktop compositor */
+    if (s_mouse_captured && BANANA_HAS(__banana, win_capture_mouse)) {
+        bwin_capture_mouse(&s_win, 0);
+        s_mouse_captured = 0;
+        DG_Log("DG_RestoreCursor: mouse released.\n");
+    }
 }
 
 static void DG_HideCursor(void) {
-    /* In Ring-3 user mode (Banana OS Build 141+), apps cannot access kernel addresses */
-    DG_Log("DG_HideCursor: user mode active.\n");
+    /* Use API v20 relative mouse capture: hides cursor, suspends VM absolute integration, enables 360 look */
+    if (BANANA_HAS(__banana, win_capture_mouse)) {
+        if (bwin_capture_mouse(&s_win, 1) == 0) {
+            s_mouse_captured = 1;
+            DG_Log("DG_HideCursor: native relative mouse capture active (API v20)\n");
+            printf("DOOM: Capture souris relative activee (API v20)\n");
+            return;
+        }
+    }
+    DG_Log("DG_HideCursor: API v20 capture unavailable, fallback mode active.\n");
 }
 
 static void release_key(unsigned char dk) {
@@ -241,14 +255,13 @@ void DG_Log(const char* fmt, ...) {
 
 void DG_Init(void) {
     int fullscreen = 0;
-    int show_cursor = 0;
     extern int myargc;
     extern char **myargv;
     for (int i = 1; i < myargc; i++) {
         if (!strcmp(myargv[i], "-fullscreen") || !strcmp(myargv[i], "-fs") || !strcmp(myargv[i], "-f")) {
             fullscreen = 1;
         } else if (!strcmp(myargv[i], "-showcursor") || !strcmp(myargv[i], "-cursor")) {
-            show_cursor = 1;
+            s_show_cursor = 1;
         } else if ((!strcmp(myargv[i], "-ms") || !strcmp(myargv[i], "-mousespeed")) && i + 1 < myargc) {
             int spd = atoi(myargv[++i]);
             if (spd > 0 && spd < 100) s_mouse_speed = spd;
@@ -257,7 +270,7 @@ void DG_Init(void) {
     int req_w = fullscreen ? 4000 : WIN_W;
     int req_h = fullscreen ? 4000 : WIN_H;
 
-    DG_Log("DG_Init: opening window %dx%d (fullscreen=%d, mousespeed=%d, showcursor=%d)...\n", req_w, req_h, fullscreen, s_mouse_speed, show_cursor);
+    DG_Log("DG_Init: opening window %dx%d (fullscreen=%d, mousespeed=%d, showcursor=%d)...\n", req_w, req_h, fullscreen, s_mouse_speed, s_show_cursor);
     if (bwin_open(&s_win, "DOOM - Banana OS", req_w, req_h) != 0) {
         DG_Log("DG_Init ERROR: Failed to open desktop window! (Desktop/GUI not active? Type startx)\n");
         printf("DOOM: Failed to open desktop window (start desktop with startx first)\n");
@@ -269,7 +282,7 @@ void DG_Init(void) {
     bwin_wheel(&s_win);
 
     /* Hide mouse pointer while DOOM is playing unless requested otherwise */
-    if (!show_cursor) {
+    if (!s_show_cursor) {
         DG_HideCursor();
         atexit(DG_RestoreCursor);
     } else {
@@ -304,6 +317,22 @@ void DG_PollEvents(void) {
             /* Reset mouse coordinates when focus changes */
             s_last_mouse_x = -1;
             s_last_mouse_y = -1;
+            if (ev.x && !s_mouse_captured && !s_show_cursor && BANANA_HAS(__banana, win_capture_mouse)) {
+                if (bwin_capture_mouse(&s_win, 1) == 0) {
+                    s_mouse_captured = 1;
+                }
+            }
+        } else if (ev.type == BANANA_EV_CAPTURE) {
+            s_mouse_captured = ev.x;
+            if (ev.buttons & 1) s_mouse_buttons |= 1; else s_mouse_buttons &= ~1;
+            if (ev.buttons & 2) s_mouse_buttons |= 2; else s_mouse_buttons &= ~2;
+            DG_Log("DOOM: Mouse capture state: %d (buttons=%d)\n", s_mouse_captured, ev.buttons);
+        } else if (ev.type == BANANA_EV_MOUSE_REL) {
+            /* Native 360 relative mouse motion (Banana OS API v20 / Build 167+) */
+            if (ev.buttons & 1) s_mouse_buttons |= 1; else s_mouse_buttons &= ~1;
+            if (ev.buttons & 2) s_mouse_buttons |= 2; else s_mouse_buttons &= ~2;
+            int dx = ev.x * s_mouse_speed;
+            DG_SendMouseEvent(s_mouse_buttons, dx, 0);
         } else if (ev.type == BANANA_EV_WHEEL) {
             if (ev.y != 0) {
                 DG_ChangeWeapon(ev.y > 0 ? 1 : -1);
@@ -325,6 +354,12 @@ void DG_PollEvents(void) {
                 }
             }
         } else if (ev.type == BANANA_EV_MOUSE_DOWN) {
+            /* If mouse capture was released (e.g. via Escape), click to re-capture! */
+            if (!s_mouse_captured && !s_show_cursor && BANANA_HAS(__banana, win_capture_mouse)) {
+                if (bwin_capture_mouse(&s_win, 1) == 0) {
+                    s_mouse_captured = 1;
+                }
+            }
             if (ev.button == 1) {
                 /* Left click: Fire! Held until mouse release */
                 s_mouse_buttons |= 1;
@@ -343,21 +378,24 @@ void DG_PollEvents(void) {
                 DG_SendMouseEvent(s_mouse_buttons, 0, 0);
             }
         } else if (ev.type == BANANA_EV_MOUSE_MOVE) {
-            if (ev.buttons & 1) s_mouse_buttons |= 1;
-            else s_mouse_buttons &= ~1;
+            /* Fallback delta motion when native relative capture is not active */
+            if (!s_mouse_captured) {
+                if (ev.buttons & 1) s_mouse_buttons |= 1;
+                else s_mouse_buttons &= ~1;
 
-            if (s_last_mouse_x >= 0 && s_last_mouse_y >= 0) {
-                int dx = ev.x - s_last_mouse_x;
-                int dy = ev.y - s_last_mouse_y;
+                if (s_last_mouse_x >= 0 && s_last_mouse_y >= 0) {
+                    int dx = ev.x - s_last_mouse_x;
+                    int dy = ev.y - s_last_mouse_y;
 
-                if (dx > -300 && dx < 300 && dy > -300 && dy < 300) {
-                    if (dx != 0) {
-                        DG_SendMouseEvent(s_mouse_buttons, dx * s_mouse_speed, 0);
+                    if (dx > -300 && dx < 300 && dy > -300 && dy < 300) {
+                        if (dx != 0) {
+                            DG_SendMouseEvent(s_mouse_buttons, dx * s_mouse_speed, 0);
+                        }
                     }
                 }
+                s_last_mouse_x = ev.x;
+                s_last_mouse_y = ev.y;
             }
-            s_last_mouse_x = ev.x;
-            s_last_mouse_y = ev.y;
         }
     }
 
