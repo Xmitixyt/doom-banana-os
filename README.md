@@ -1,4 +1,5 @@
 # 🍌 DOOM for Banana OS (Bêta)
+<img width="648" height="430" alt="image" src="https://github.com/user-attachments/assets/036a0706-1263-4815-99f3-7307027edd92" />
 
 [![Banana OS](https://img.shields.io/badge/OS-Banana%20OS%200.6-yellow.svg)](https://github.com/qcom-toolbox/Banana-OS)
 [![Status](https://img.shields.io/badge/status-Bêta%20(expérimental)-orange.svg)]()
@@ -35,7 +36,6 @@ Portage de **DOOM** (basé sur [doomgeneric](https://github.com/ozkl/doomgeneric
   - **Clic gauche** : Tirer
   - **Clic droit** : Action / Ouvrir les portes
   - **Molette de souris** : Changement d'arme précédent / suivant
-- **Neutralisation du Curseur** : le curseur flèche du système est masqué pendant le jeu (option `-showcursor` pour le forcer si nécessaire).
 - **Moteur Audio Haute Fidélité Multi-Canaux** : bruitages et effets sonores complets (tirs d'armes, monstres, portes, explosions, pickups, etc.) mixés en temps réel sur 16 canaux à 48 000 Hz en 16-bit stéréo avec interpolation linéaire anti-crépitement, spatialisation gauche/droite et gestion continue de la file DMA via `banana_play()`.
 - **Architecture Universelle** : paquet binaire `.bpk` contenant à la fois les exécutables 32-bit (`app-i686`) et 64-bit (`app-x86_64`).
 
@@ -53,7 +53,6 @@ Portage de **DOOM** (basé sur [doomgeneric](https://github.com/ozkl/doomgeneric
    - **Solution recommandée** : Désactiver l'intégration de la souris avec <kbd>Ctrl Droite</kbd> + <kbd>I</kbd> afin que VirtualBox capture la souris à 100%.
 4. **Comportement du `wget` dans Banana OS** :  
    - Sur Banana OS, retélécharger un fichier sans supprimer l'ancien crée `fichier.bpk.1` au lieu d'écraser. Pensez toujours à exécuter `rm -f doom.bpk*` avant un `wget`.
-
 ---
 
 ## 📥 Installation Rapide sur Banana OS
