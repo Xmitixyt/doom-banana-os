@@ -57,7 +57,7 @@ Portage de **DOOM** (basé sur [doomgeneric](https://github.com/ozkl/doomgeneric
 
 ## 📥 Installation Rapide sur Banana OS
 
-Ouvrez un terminal dans Banana OS (`startx` si vous êtes en mode texte) :
+Ouvrez un terminal dans Banana OS (`start` si vous êtes en mode texte) :
 
 ```bash
 # 1. Nettoyer les éventuels anciens téléchargements
