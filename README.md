@@ -15,7 +15,12 @@ Portage de **DOOM** (basé sur [doomgeneric](https://github.com/ozkl/doomgeneric
 
 ## 🎮 Fonctionnalités
 
-- **Fenêtrage natif Banana OS** : rendu direct via l'API graphique `bwin` en Ring 0 / mémoire partagée.
+- **Trilogie Complète Intégrée (DOOM 1, DOOM 2 et DOOM 3)** :
+  - **Prêt à jouer immédiatement** : aucun fichier WAD supplémentaire à chercher ou copier, tout est intégré directement dans le paquet `doom.bpk` !
+  - **DOOM 1** (`doom 1`) : version Shareware classique (Épisode 1 : *Knee-Deep in the Dead*).
+  - **DOOM 2** (`doom 2`) : le légendaire *DOOM II: Hell on Earth* complet avec ses 32 niveaux, le Super Shotgun et tous les monstres originaux.
+  - **DOOM 3 / The Ultimate Doom** (`doom 3` ou `doom`) : la version ultime de DOOM 1 avec l'ensemble des 4 épisodes (*Knee-Deep in the Dead*, *The Shores of Hell*, *Inferno*, et *Thy Flesh Consumed*).
+- **Fenêtrage natif Banana OS (Ring 3 / SDK Build 165)** : rendu graphique optimisé via l'API `bwin` avec exécution sécurisée en espace utilisateur protégé.
 - **Mode Plein Écran (`-fullscreen` / `-fs`)** : s'adapte automatiquement à la résolution de l'écran avec bordures noires (pillarboxing) pour préserver le ratio 16:10 d'origine de DOOM.
 - **Prise en charge Multi-Touches native (SDK API v14 / build 139)** :
   - Déplacements combinés simultanés (avancer + strafer en diagonale avec <kbd>Z</kbd>+<kbd>D</kbd> ou <kbd>W</kbd>+<kbd>D</kbd>).
