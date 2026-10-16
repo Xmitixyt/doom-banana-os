@@ -63,14 +63,16 @@ Ouvrez un terminal dans Banana OS (`start` si vous êtes en mode texte) :
 # 1. Nettoyer les éventuels anciens téléchargements
 rm -f doom.bpk*
 
-# 2. Télécharger le paquet
-wget http://<IP_HOTE>:8000/doom.bpk
+# 2. Télécharger le paquet directement depuis GitHub :
+wget -O doom.bpk https://github.com/Xmitixyt/doom-banana-os/releases/download/v1.7-beta/doom.bpk
+# OU via le lien direct raw GitHub si la release est en cours d'édition :
+# wget -O doom.bpk https://raw.githubusercontent.com/Xmitixyt/doom-banana-os/main/releases/doom.bpk
 
 # 3. Installer le paquet (inclut la trilogie DOOM 1, DOOM 2 et The Ultimate Doom)
 pkg install -y doom.bpk
 
 # 4. Lancer le jeu de votre choix :
-doom 3 -fullscreen   # Lance The Ultimate Doom (DOOM 1 complet avec tous les épisodes 1, 2, 3, 4)
+doom 3 -fullscreen   # Lance The Ultimate Doom (DOOM 1 complet avec les 4 épisodes)
 doom 2 -fullscreen   # Lance DOOM II: Hell on Earth (32 niveaux complets)
 doom 1 -fullscreen   # Lance DOOM 1 Shareware
 doom -fullscreen     # Lance par défaut la version complète (The Ultimate Doom)

@@ -43,97 +43,13 @@ static int s_last_mouse_y = -1;
 static int s_mouse_buttons = 0;
 static int s_mouse_speed = 7;
 
-typedef struct {
-    volatile uint8_t* addr;
-    uint8_t orig;
-} patch_entry_t;
-
-static patch_entry_t s_patches[8];
-static int s_patch_count = 0;
-
-static void apply_ret_patch(volatile uint8_t* addr, const char* name) {
-    if (!addr) return;
-    for (int i = 0; i < s_patch_count; i++) {
-        if (s_patches[i].addr == addr) return; /* already patched */
-    }
-    if (s_patch_count < 8) {
-        s_patches[s_patch_count].addr = addr;
-        s_patches[s_patch_count].orig = *addr;
-        s_patch_count++;
-        *addr = 0xC3; /* ret */
-        DG_Log("DG_HideCursor: patched %s at %p (orig=0x%02x)\n", name, (void*)addr, s_patches[s_patch_count - 1].orig);
-        printf("DOOM: Curseur masque -> %s @ %p\n", name, (void*)addr);
-    }
-}
-
 static void DG_RestoreCursor(void) {
-    for (int i = 0; i < s_patch_count; i++) {
-        if (s_patches[i].addr) {
-            *s_patches[i].addr = s_patches[i].orig;
-            DG_Log("DG_RestoreCursor: restored %p (orig=0x%02x)\n", (void*)s_patches[i].addr, s_patches[i].orig);
-        }
-    }
-    s_patch_count = 0;
-    DG_Log("DG_RestoreCursor: cursor restored.\n");
+    /* Cursor handled safely by system desktop compositor */
 }
 
 static void DG_HideCursor(void) {
-    /* 1. Signatures of draw_cursor:
-     * 32-bit: 55 57 56 31 f6 53 89 d3
-     * 64-bit: 41 56 41 89 fe 41 55 45 */
-    static const uint8_t pat_dc32[8] = { 0x55, 0x57, 0x56, 0x31, 0xF6, 0x53, 0x89, 0xD3 };
-    static const uint8_t pat_dc64[8] = { 0x41, 0x56, 0x41, 0x89, 0xFE, 0x41, 0x55, 0x45 };
-
-    /* Known addresses for draw_cursor */
-    volatile uint8_t* cand_dc[] = {
-        (volatile uint8_t*)0x0010d0d0, /* 32-bit Banana OS kernel */
-        (volatile uint8_t*)0x0010d500, /* 64-bit Banana OS kernel */
-        NULL
-    };
-    int found_dc = 0;
-    for (int i = 0; cand_dc[i]; i++) {
-        volatile uint8_t* p = cand_dc[i];
-        if (memcmp((const void*)p, pat_dc32, 8) == 0 || memcmp((const void*)p, pat_dc64, 8) == 0) {
-            apply_ret_patch(p, "draw_cursor");
-            found_dc = 1;
-            break;
-        }
-    }
-
-    /* Fallback scan for draw_cursor */
-    if (!found_dc) {
-        uintptr_t start = 0x00100000;
-        uintptr_t end   = 0x00200000;
-        for (uintptr_t a = start; a < end; a++) {
-            const uint8_t* p = (const uint8_t*)a;
-            if (memcmp(p, pat_dc32, 8) == 0 || memcmp(p, pat_dc64, 8) == 0) {
-                apply_ret_patch((volatile uint8_t*)p, "draw_cursor (scanned)");
-                found_dc = 1;
-                break;
-            }
-        }
-    }
-
-    /* 2. Known addresses for fb_putpixel_direct (which draws the cursor directly to the screen):
-     * 32-bit: 0x001092b0 (A1 xx xx xx xx 85 C0 74 34)
-     * 64-bit: 0x00109590 (8B 05 xx xx xx xx 85 C0 74 2A) */
-    volatile uint8_t* p_fb32 = (volatile uint8_t*)0x001092b0;
-    if (p_fb32[0] == 0xA1 && p_fb32[5] == 0x85 && p_fb32[6] == 0xC0 && p_fb32[7] == 0x74 && p_fb32[8] == 0x34) {
-        apply_ret_patch(p_fb32, "fb_putpixel_direct (32-bit)");
-    }
-
-    volatile uint8_t* p_fb64 = (volatile uint8_t*)0x00109590;
-    if (p_fb64[0] == 0x8B && p_fb64[1] == 0x05 && p_fb64[6] == 0x85 && p_fb64[7] == 0xC0 && p_fb64[8] == 0x74 && p_fb64[9] == 0x2A) {
-        apply_ret_patch(p_fb64, "fb_putpixel_direct (64-bit)");
-    }
-
-    if (s_patch_count == 0) {
-        DG_Log("DG_HideCursor WARNING: No cursor functions matched signatures.\n");
-        printf("DOOM WARNING: Echec localisation curseur dans le noyau.\n");
-    } else {
-        DG_Log("DG_HideCursor SUCCESS: %d cursor functions patched.\n", s_patch_count);
-        printf("DOOM: %d fonctions curseur neutralisees avec succes.\n", s_patch_count);
-    }
+    /* In Ring-3 user mode (Banana OS Build 141+), apps cannot access kernel addresses */
+    DG_Log("DG_HideCursor: user mode active.\n");
 }
 
 static void release_key(unsigned char dk) {

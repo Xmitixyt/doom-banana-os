@@ -28,7 +28,10 @@ SRC_DOOM = [
     "i_video.c", "doomgeneric.c", "doomgeneric_banana.c", "i_bananasound.c"
 ]
 
-LIBC_SRCS = ["crt0.c", "libc.c", "stdio.c", "banana.c", "math.c", "posix.c", "setjmp.c"]
+LIBC_SRCS = [
+    "crt0.c", "libc.c", "stdio.c", "banana.c", "math.c", "posix.c", "setjmp.c",
+    "mman.c", "pthread.c", "socket.c", "signal.c"
+]
 
 def compile_arch(arch, clang_target, cflags_arch, lld_emul):
     print(f"\n=== Compiling for {arch} ===")
