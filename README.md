@@ -46,7 +46,12 @@ Portage de **DOOM** (basé sur [doomgeneric](https://github.com/ozkl/doomgeneric
   - **Clic gauche** : Tirer
   - **Clic droit** : Action / Ouvrir les portes
   - **Molette de souris** : Changement d'arme précédent / suivant
-- **Moteur Audio Haute Fidélité Multi-Canaux** : bruitages et effets sonores complets (tirs d'armes, monstres, portes, explosions, pickups, etc.) mixés en temps réel sur 16 canaux à 48 000 Hz en 16-bit stéréo avec interpolation linéaire anti-crépitement, spatialisation gauche/droite et gestion continue de la file DMA via `banana_play()`.
+- **Moteur Audio Complet & Synthétiseur Musique OPL2 FM (Sound Blaster / AdLib)** :
+  - **Musique originale intégrale (MIDI & MUS)** : toutes les musiques mythiques composées par Bobby Prince (*At Doom's Gate*, *Running from Evil*, etc.) jouent en temps réel !
+  - **Synthétiseur FM OPL2 émulé (DBOPL)** : synthèse FM fidèle à 100% au son vintage des cartes Sound Blaster 16 et AdLib sur PC DOS.
+  - **Banque d'instruments GENMIDI native** : utilise directement les définitions FM de l'IWAD sans soundfont externe lourd.
+  - **Effets sonores (SFX) haute fidélité** : 16 canaux simultanés mixés en temps réel avec interpolation linéaire anti-crépitement, spatialisation gauche/droite et streaming DMA continu via `banana_play()`.
+  - **Contrôle du volume indépendant** pour la musique et les bruitages depuis le menu ou la configuration.
 - **Architecture Universelle** : paquet binaire `.bpk` contenant à la fois les exécutables 32-bit (`app-i686`) et 64-bit (`app-x86_64`).
 
 ---
@@ -54,13 +59,11 @@ Portage de **DOOM** (basé sur [doomgeneric](https://github.com/ozkl/doomgeneric
 ## 🐛 Bugs Connus et Limitations (Bêta)
 
 1. **Carte son dans la Machine Virtuelle** :  
-   - Pour entendre le son dans VirtualBox, assurez-vous que l'audio est activé dans les paramètres de la VM (Contrôleur audio : **Intel HD Audio** ou **ICH AC97**).
+   - Pour entendre le son et la musique dans VirtualBox, assurez-vous que l'audio est activé dans les paramètres de la VM (Contrôleur audio : **Intel HD Audio** ou **ICH AC97**).
    - Dans QEMU, démarrez avec `-device AC97` ou `-device intel-hda -device hda-output`.
-2. **Musique de fond (MIDI/MUS)** :  
-   - Les effets sonores (SFX) sont 100% actifs et fluides. La musique de fond MIDI/MUS n'a pas encore de synthétiseur logiciel intégré dans cette version.
-3. **Capture de souris** :  
+2. **Capture de souris** :  
    - Avec **Banana OS Build 167+ (API v20)**, la capture relative est native et automatique ! Si vous êtes sur une version plus ancienne de Banana OS, désactiver l'intégration de la souris VirtualBox (<kbd>Ctrl Droite</kbd> + <kbd>I</kbd>) est recommandé pour éviter les limitations de bordure.
-4. **Comportement du `wget` dans Banana OS** :  
+3. **Comportement du `wget` dans Banana OS** :  
    - Sur Banana OS, retélécharger un fichier sans supprimer l'ancien crée `fichier.bpk.1` au lieu d'écraser. Pensez toujours à exécuter `rm -f doom.bpk*` avant un `wget`.
 ---
 
@@ -72,9 +75,9 @@ Ouvrez un terminal dans Banana OS (`start` si vous êtes en mode texte) :
 # 1. Nettoyer les éventuels anciens téléchargements
 rm -f doom.bpk*
 
-# 2. Télécharger le paquet directement depuis GitHub :
-wget -O doom.bpk https://github.com/Xmitixyt/doom-banana-os/releases/download/v1.8-beta/doom.bpk
-# OU via le lien direct raw GitHub si la release est en cours d'édition :
+# 2. Télécharger le paquet directement depuis GitHub (ou via raw) :
+wget -O doom.bpk https://github.com/Xmitixyt/doom-banana-os/releases/download/v1.9-beta/doom.bpk
+# OU via le lien direct raw GitHub :
 # wget -O doom.bpk https://raw.githubusercontent.com/Xmitixyt/doom-banana-os/main/releases/doom.bpk
 
 # 3. Installer le paquet (inclut la trilogie DOOM 1, DOOM 2 et The Ultimate Doom)

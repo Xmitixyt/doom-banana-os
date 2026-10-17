@@ -25,12 +25,14 @@ SRC_DOOM = [
     "r_segs.c", "r_sky.c", "r_things.c", "sha1.c", "sounds.c", "statdump.c", "st_lib.c",
     "st_stuff.c", "s_sound.c", "tables.c", "v_video.c", "wi_stuff.c", "w_checksum.c",
     "w_file.c", "w_main.c", "w_wad.c", "z_zone.c", "w_file_stdc.c", "i_input.c",
-    "i_video.c", "doomgeneric.c", "doomgeneric_banana.c", "i_bananasound.c"
+    "i_video.c", "doomgeneric.c", "doomgeneric_banana.c", "i_bananasound.c",
+    "mus2mid.c", "dbopl.c", "opl.c", "opl_queue.c", "midifile.c", "oplplayer.c"
 ]
 
 LIBC_SRCS = [
     "crt0.c", "libc.c", "stdio.c", "banana.c", "math.c", "posix.c", "setjmp.c",
-    "mman.c", "pthread.c", "socket.c", "signal.c"
+    "mman.c", "pthread.c", "socket.c", "signal.c", "dl.c", "cxxrt.c",
+    "unix.c", "ufd.c", "math99.c"
 ]
 
 def compile_arch(arch, clang_target, cflags_arch, lld_emul):

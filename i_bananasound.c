@@ -15,6 +15,7 @@
 #include "sounds.h"
 #include "m_misc.h"
 #include "m_argv.h"
+#include "oplplayer.h"
 #include <banana.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,7 +51,13 @@ float libsamplerate_scale = 0.65f;
 static int32_t s_mix_l[1440];
 static int32_t s_mix_r[1440];
 static int16_t s_pcm_out[1440 * 2];
+static int16_t s_music_buf[1440 * 2];
 static uint32_t s_frac_acc = 0;
+
+static boolean s_music_initialized = false;
+static boolean s_music_playing = false;
+static int s_music_volume = 127;
+static void* s_current_song = NULL;
 
 static snddevice_t sound_banana_devices[] = {
     SNDDEVICE_SB,
@@ -216,7 +223,7 @@ static void I_Banana_UpdateSound(void) {
         if (s_channels[c].active) { active_count++; }
     }
 
-    if (!active_count) return;
+    if (!active_count && (!s_music_playing || s_music_volume == 0)) return;
 
     /* Safety guard: only throttle if audio queue has accumulated > 600ms backlog */
     if (banana_audio_queued_ms() > 600) return;
@@ -224,45 +231,59 @@ static void I_Banana_UpdateSound(void) {
     memset(s_mix_l, 0, nsamples * sizeof(int32_t));
     memset(s_mix_r, 0, nsamples * sizeof(int32_t));
 
-    for (int c = 0; c < BANANA_NUM_CHANNELS; c++) {
-        banana_channel_t* ch = &s_channels[c];
-        if (!ch->active || !ch->sfx) continue;
+    /* 1. Mix SFX channels */
+    if (active_count) {
+        for (int c = 0; c < BANANA_NUM_CHANNELS; c++) {
+            banana_channel_t* ch = &s_channels[c];
+            if (!ch->active || !ch->sfx) continue;
 
-        sfx_cache_t* sc = ch->sfx;
-        uint32_t sfx_len = sc->length;
-        const uint8_t* pcm = sc->data;
-        uint64_t pos = ch->pos_fp;
-        uint64_t step = ch->step_fp;
+            sfx_cache_t* sc = ch->sfx;
+            uint32_t sfx_len = sc->length;
+            const uint8_t* pcm = sc->data;
+            uint64_t pos = ch->pos_fp;
+            uint64_t step = ch->step_fp;
 
-        int sep = ch->sep;
-        if (sep < 0) sep = 0; else if (sep > 254) sep = 254;
-        int vol = ch->vol;
-        if (vol < 0) vol = 0; else if (vol > 127) vol = 127;
+            int sep = ch->sep;
+            if (sep < 0) sep = 0; else if (sep > 254) sep = 254;
+            int vol = ch->vol;
+            if (vol < 0) vol = 0; else if (vol > 127) vol = 127;
 
-        /* Stereo panning: sep 0 = full left, 128 = center, 254 = full right */
-        int lvol = (vol * (254 - sep)) / 128;
-        int rvol = (vol * sep) / 128;
+            /* Stereo panning: sep 0 = full left, 128 = center, 254 = full right */
+            int lvol = (vol * (254 - sep)) / 128;
+            int rvol = (vol * sep) / 128;
+
+            for (uint32_t i = 0; i < nsamples; i++) {
+                uint32_t s_idx = (uint32_t)(pos >> 16);
+                if (s_idx >= sfx_len) {
+                    ch->active = 0;
+                    break;
+                }
+
+                /* High quality linear interpolation between consecutive samples */
+                uint32_t frac = (uint32_t)(pos & 0xFFFF);
+                int s0 = (int)pcm[s_idx] - 128;
+                int s1 = (s_idx + 1 < sfx_len) ? ((int)pcm[s_idx + 1] - 128) : s0;
+                int sample = s0 + (int)(((int64_t)(s1 - s0) * (int64_t)frac) >> 16);
+
+                /* Scale to 16-bit without clipping */
+                s_mix_l[i] += sample * lvol * 2;
+                s_mix_r[i] += sample * rvol * 2;
+
+                pos += step;
+            }
+            ch->pos_fp = pos;
+        }
+    }
+
+    /* 2. Mix OPL FM synthesized music */
+    if (s_music_playing && s_music_volume > 0 && s_music_initialized) {
+        memset(s_music_buf, 0, nsamples * 2 * sizeof(int16_t));
+        opl_synth_player.render(s_music_buf, nsamples);
 
         for (uint32_t i = 0; i < nsamples; i++) {
-            uint32_t s_idx = (uint32_t)(pos >> 16);
-            if (s_idx >= sfx_len) {
-                ch->active = 0;
-                break;
-            }
-
-            /* High quality linear interpolation between consecutive samples */
-            uint32_t frac = (uint32_t)(pos & 0xFFFF);
-            int s0 = (int)pcm[s_idx] - 128;
-            int s1 = (s_idx + 1 < sfx_len) ? ((int)pcm[s_idx + 1] - 128) : s0;
-            int sample = s0 + (int)(((int64_t)(s1 - s0) * (int64_t)frac) >> 16);
-
-            /* Scale to 16-bit without clipping */
-            s_mix_l[i] += sample * lvol * 2;
-            s_mix_r[i] += sample * rvol * 2;
-
-            pos += step;
+            s_mix_l[i] += s_music_buf[i * 2 + 0];
+            s_mix_r[i] += s_music_buf[i * 2 + 1];
         }
-        ch->pos_fp = pos;
     }
 
     /* Clamp and convert 32-bit mix to 16-bit signed stereo output */
@@ -296,19 +317,86 @@ sound_module_t DG_sound_module = {
     I_Banana_PrecacheSounds,
 };
 
-/* ── Music Module (Graceful Stubs) ──────────────────────────────── */
+/* ── Music Module (Authentic OPL2 FM Synthesis) ─────────────────── */
 
-static boolean I_Banana_Music_Init(void) { return true; }
-static void I_Banana_Music_Shutdown(void) {}
-static void I_Banana_Music_SetMusicVolume(int volume) { (void)volume; }
-static void I_Banana_Music_PauseMusic(void) {}
-static void I_Banana_Music_ResumeMusic(void) {}
-static void* I_Banana_Music_RegisterSong(void* data, int len) { (void)data; (void)len; return (void*)1; }
-static void I_Banana_Music_UnRegisterSong(void* handle) { (void)handle; }
-static void I_Banana_Music_PlaySong(void* handle, boolean looping) { (void)handle; (void)looping; }
-static void I_Banana_Music_StopSong(void) {}
-static boolean I_Banana_Music_MusicIsPlaying(void) { return false; }
-static void I_Banana_Music_Poll(void) {}
+static boolean I_Banana_Music_Init(void) {
+    if (!opl_synth_player.init(BANANA_AUDIO_RATE)) {
+        printf("DOOM Audio: Synthetiseur OPL non disponible\n");
+        return false;
+    }
+    s_music_initialized = true;
+    opl_synth_player.setvolume(s_music_volume * 15 / 127);
+    printf("DOOM Audio: Synthetiseur OPL2 FM actif (Bobby Prince / Sound Blaster @ %d Hz)\n", BANANA_AUDIO_RATE);
+    return true;
+}
+
+static void I_Banana_Music_Shutdown(void) {
+    if (s_music_initialized) {
+        opl_synth_player.shutdown();
+        s_music_initialized = false;
+        s_music_playing = false;
+        s_current_song = NULL;
+    }
+}
+
+static void I_Banana_Music_SetMusicVolume(int volume) {
+    if (volume < 0) volume = 0;
+    if (volume > 127) volume = 127;
+    s_music_volume = volume;
+    if (s_music_initialized) {
+        opl_synth_player.setvolume(volume * 15 / 127);
+    }
+}
+
+static void I_Banana_Music_PauseMusic(void) {
+    if (s_music_initialized && s_music_playing) {
+        opl_synth_player.pause();
+    }
+}
+
+static void I_Banana_Music_ResumeMusic(void) {
+    if (s_music_initialized && s_music_playing) {
+        opl_synth_player.resume();
+    }
+}
+
+static void* I_Banana_Music_RegisterSong(void* data, int len) {
+    if (!s_music_initialized || !data || len < 4) return NULL;
+    return (void*)opl_synth_player.registersong(data, len);
+}
+
+static void I_Banana_Music_UnRegisterSong(void* handle) {
+    if (s_music_initialized && handle) {
+        if (s_current_song == handle) {
+            s_music_playing = false;
+            s_current_song = NULL;
+        }
+        opl_synth_player.unregistersong(handle);
+    }
+}
+
+static void I_Banana_Music_PlaySong(void* handle, boolean looping) {
+    if (!s_music_initialized || !handle) return;
+    s_current_song = handle;
+    s_music_playing = true;
+    opl_synth_player.play(handle, looping);
+}
+
+static void I_Banana_Music_StopSong(void) {
+    if (s_music_initialized && s_music_playing) {
+        opl_synth_player.stop();
+        s_music_playing = false;
+        s_current_song = NULL;
+    }
+}
+
+static boolean I_Banana_Music_MusicIsPlaying(void) {
+    return s_music_playing;
+}
+
+static void I_Banana_Music_Poll(void) {
+    /* OPL audio is rendered synchronously in I_Banana_UpdateSound() */
+}
 
 music_module_t DG_music_module = {
     music_banana_devices,

@@ -515,19 +515,13 @@ static int file_exists(const char* path) {
     return 0;
 }
 
-/* system() stub for Banana OS libc */
-int system(const char* cmd) {
-    (void)cmd;
-    return -1;
-}
-
 int main(int argc, char** argv) {
     printf("\n======================================================\n");
-    printf("=== DOOM Banana OS v1.7 [Multi-Touches & Full WADs] ===\n");
+    printf("=== DOOM Banana OS v1.9 [OPL2 FM Music & 360 Mouse] ===\n");
     printf("======================================================\n");
     FILE* logf = fopen("/home/banana/doom.log", "w");
     if (logf) {
-        fprintf(logf, "=== DOOM Banana OS Launcher v1.7 ===\n");
+        fprintf(logf, "=== DOOM Banana OS Launcher v1.9 ===\n");
         fprintf(logf, "argc: %d\n", argc);
         for (int i = 0; i < argc; i++) fprintf(logf, "argv[%d]: %s\n", i, argv[i]);
         fclose(logf);
